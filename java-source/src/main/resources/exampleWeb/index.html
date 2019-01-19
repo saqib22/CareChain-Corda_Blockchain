@@ -1,0 +1,315 @@
+<!--
+--------
+WARNING:
+--------
+
+THIS CODE IS ONLY MADE AVAILABLE FOR DEMONSTRATION PURPOSES AND IS NOT SECURE! DO NOT USE IN PRODUCTION!
+
+FOR SECURITY REASONS, USING A JAVASCRIPT WEB APP HOSTED VIA THE CORDA NODE IS NOT THE RECOMMENDED WAY TO INTERFACE
+WITH CORDA NODES! HOWEVER, FOR THIS PRE-ALPHA RELEASE IT'S A USEFUL WAY TO EXPERIMENT WITH THE PLATFORM AS IT ALLOWS
+YOU TO QUICKLY BUILD A UI FOR DEMONSTRATION PURPOSES.
+
+GOING FORWARD WE RECOMMEND IMPLEMENTING A STANDALONE WEB SERVER THAT AUTHORISES VIA THE NODE'S RPC INTERFACE. IN THE
+COMING WEEKS WE'LL WRITE A TUTORIAL ON HOW BEST TO DO THIS.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Care Chain</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0-rc.1/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.2.0/ui-bootstrap-tpls.min.js"></script>
+    <script src="js/angular-module.js"></script>
+
+
+    <style type="text/css">
+
+        html,body,.container-fluid {
+            height: 100%;
+        }
+
+        #wrapper{
+            margin-top: 50px;
+        }
+
+        #sidebar-wrapper {
+          background: #0c3552e8;
+          position: fixed;
+          top: 50px;
+          bottom: 0;
+          left: 0;
+          z-index: 1000;
+          display: block;
+          padding: 20px;
+          overflow-x: hidden;
+          overflow-y: auto; 
+        }
+
+        #page-content-wrapper {
+            margin-left: 15%;
+            padding: 10px;
+        }
+
+        #searchPat{
+            padding: 10px;
+        }
+
+    </style>
+
+</head>
+
+<body ng-app="demoAppModule" ng-controller="DemoAppController as demoApp">
+    <nav class="navbar navbar-default navbar-fixed-top" style="border-width:0px">
+        <div class="container-fluid" style="background:black">
+            <div class="navbar-header" >
+                <a class="navbar-brand" style="color:#d9edf7"  href="#">Care Chain</a>
+            </div>
+            <div class="navbar-right">
+                <a class="navbar-brand" style="color:#d9edf7" href="#">{{demoApp.thisNode}}</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="wrapper" class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div id="sidebar-wrapper" class="col-md-2" style="text-align:center">
+                <ul class="nav sidebar-nav">
+                    <li>
+                        <button ng-hide="demoApp.thisNode !== 'O=PartyA, L=London, C=GB'" ng-click="demoApp.openModal()" type="button" class="btn btn-primary navbar-btn">New Patient</button>
+                    </li>
+                    <!--<li ng-hide="demoApp.thisNode === 'O=PartyA, L=London, C=GB'">-->
+                        <!--<a href="#health">My Health Status</a>-->
+                    <!--</li>-->
+                    <li ng-hide="demoApp.thisNode !== 'O=PartyA, L=London, C=GB'">
+                        <!--<a href="#">Patients</a>-->
+                        <h4 style="color:white">Patients</h4>
+                        <div ng-repeat="iou in demoApp.myious | unique:'patient'">
+                            <ul>
+                                <li style="color:white">{{iou.patient}}</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li ng-hide="demoApp.thisNode === 'O=PartyA, L=London, C=GB'">
+                        <!--<a href="#patious">History</a>-->
+                        <h4 style="color:white">Hospitals</h4>
+                        <div ng-repeat="iou in demoApp.ious | unique:'hospital'">
+                            <ul>
+                                <li style="color:white">{{iou.hospital}}</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <!--<li ng-hide="demoApp.thisNode !== 'O=PartyA, L=London, C=GB'">-->
+                        <!--<a href="#hospious">History</a>-->
+                    <!--</li>-->
+                </ul>
+            </div>
+            <!-- /#sidebar-wrapper -->
+
+            <!-- Page Content -->
+            <div id="page-content-wrapper" class="col-md-10">
+                <div class="row">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-10">
+                        <div class="panel-group" id="accordion">
+                            <div ng-hide="demoApp.thisNode === 'O=PartyA, L=London, C=GB'" class="panel" id="health">
+                                <div class="panel-primary">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            My Health Status:
+                                        </h4>
+                                    </div>
+                                </div>
+                                <div>
+                                    <br/>
+                                    <div ng-show="!demoApp.ious.length" class="panel-body">Your latest health information.</div>
+                                    <div ng-repeat="iou in demoApp.ious|limitTo:1" class="panel panel-default">
+                                        <div class="panel-body">
+                                            <table class=" table table-responsive">
+                                                <tr>
+                                                    <td><h4>Hospital:</h4></td>
+                                                    <td>{{iou.hospital}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Name:</h4></td>
+                                                    <td>{{iou.name}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Age:</h4></td>
+                                                    <td>{{iou.age}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Gender:</h4></td>
+                                                    <td>{{iou.gender}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Height:</h4></td>
+                                                    <td>{{iou.height}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Weight:</h4></td>
+                                                    <td>{{iou.weight}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Blood Group:</h4></td>
+                                                    <td>{{iou.bloodGroup}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><h4>Medicine:</h4></td>
+                                                    <td>{{iou.medicine}}</td>
+                                                </tr>
+                                            </table>
+
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            <div ng-hide="demoApp.thisNode === 'O=PartyA, L=London, C=GB'" class="panel" id="patious">
+                                <div class="panel-primary">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            History:
+                                        </h4>
+                                    </div>
+                                </div>
+                                <div>
+
+                                    <!--<input type="search" ng-model="search" placeholder="filter patients..." aria-label="filter patients" />-->
+                                    <!--<div ng-show="!demoApp.ious.length" class="panel-body">History of all Records.</div>-->
+                                    <div ng-repeat="iou in demoApp.ious" class="panel panel-default">
+                                        <div class="panel-body">
+                                            <ul>
+                                                <li>Hospital: {{iou.hospital}}</li>
+                                                <!--<li>Patient: {{iou.patient}}</li>-->
+                                                <li>Name: {{iou.name}}</li>
+                                                <li>Age: {{iou.age}}</li>
+                                                <li>Gender: {{iou.gender}}</li>
+                                                <li>Height: {{iou.height}}</li>
+                                                <li>Weight: {{iou.weight}}</li>
+                                                <li>Blood Group: {{iou.bloodGroup}}</li>
+                                                <li>Diagnosis: {{iou.diagnosis}}</li>
+                                                <li>Medicine: {{iou.medicine}}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                                <div ng-hide="demoApp.thisNode !== 'O=PartyA, L=London, C=GB'" class="panel" id="hospious">
+                                    <div class="panel-primary">
+                                        <div class="panel-heading">
+                                            <h4 class="panel-title">
+                                                History:
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <div class="input-group" id="searchPat">
+                                        <span class="input-group-addon">Search patient:</span>
+                                        <input type="search" class="form-control" ng-model="search" placeholder="filter patients..." aria-label="filter patients" />
+                                    </div>
+                                    <div>
+                                        <div ng-repeat="iou in demoApp.myious | filter:search" class="panel panel-default">
+                                            <div class="panel-body">
+                                                <ul>
+                                                    <!--<li>Hospital: {{iou.hospital}}</li>-->
+                                                    <li>Patient: {{iou.patient}}</li>
+                                                    <li>Name: {{iou.name}}</li>
+                                                    <li>Age: {{iou.age}}</li>
+                                                    <li>Gender: {{iou.gender}}</li>
+                                                    <li>Height: {{iou.height}}</li>
+                                                    <li>Weight: {{iou.weight}}</li>
+                                                    <li>Blood Group: {{iou.bloodGroup}}</li>
+                                                    <li>Diagnosis: {{iou.diagnosis}}</li>
+                                                    <li>Medicine: {{iou.medicine}}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1"></div>
+                </div>
+            </div>
+            <!-- /#page-content-wrapper -->
+        </div>
+    </div>
+    </div>
+
+    <!-- ------------------------------------ -->
+
+    <script type="text/ng-template" id="demoAppModal.html">
+        <div class="modal-header">
+            <h4 class="modal-title">Add new IOU</h4>
+        </div>
+        <form>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="counterparty" class="control-label">Counter-party:</label>
+                    <select ng-model="modalInstance.form.counterparty" class="form-control" id="counterparty"
+                            ng-options="peer as peer for peer in modalInstance.peers">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="name" class="control-label">Name (String):</label>
+                    <input type="text" ng-model="modalInstance.form.name" class="form-control" id="name">
+                </div>
+                <div class="form-group">
+                    <label for="age" class="control-label">Age (Int):</label>
+                    <input type="text" ng-model="modalInstance.form.age" class="form-control" id="age">
+                </div>
+                <div class="form-group">
+                    <label for="gender" class="control-label">Gender (String):</label>
+                    <input type="text" ng-model="modalInstance.form.gender" class="form-control" id="gender">
+                </div>
+                <div class="form-group">
+                    <label for="height" class="control-label">Height (Int)(in cm):</label>
+                    <input type="text" ng-model="modalInstance.form.height" class="form-control" id="height">
+                </div>
+                <div class="form-group">
+                    <label for="weight" class="control-label">Weight (Int)(in kg):</label>
+                    <input type="text" ng-model="modalInstance.form.weight" class="form-control" id="weight">
+                </div>
+                <div class="form-group">
+                    <label for="bloodGroup" class="control-label">Blood Group (String)(e.g B(positive)):</label>
+                    <input type="text" ng-model="modalInstance.form.bloodGroup" class="form-control" id="bloodGroup">
+                </div>
+                <div class="form-group">
+                    <label for="diagnosis" class="control-label">Diagnosis (String):</label>
+                    <input type="text" ng-model="modalInstance.form.diagnosis" class="form-control" id="diagnosis">
+                </div>
+                <div class="form-group">
+                    <label for="medicine" class="control-label">Medicine (String):</label>
+                    <input type="text" ng-model="modalInstance.form.medicine" class="form-control" id="medicine">
+                </div>
+
+                <div ng-show="modalInstance.formError" class="form-group">
+                    <div class="alert alert-danger" role="alert">
+                        <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                        <span class="sr-only">Error:</span>
+                        Enter valid IOU parameters
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button ng-click="modalInstance.cancel()" type="button" class="btn btn-default">Close</button>
+                <button ng-click="modalInstance.create()" type="button" class="btn btn-primary">Create IOU</button>
+            </div>
+        </form>
+    </script>
+    <script type="text/ng-template" id="messageContent.html">
+        <div class="modal-body" id="modal-body">
+            {{ modalInstanceTwo.message }}
+        </div>
+    </script>
+
+
+</body>
+</html>
