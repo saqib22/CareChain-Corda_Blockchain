@@ -5,6 +5,9 @@
 # Care Chain Project
 
 Welcome to the our Corda project Care Chain which is a block chain patient record management system.
+Medical records should be stored on a distributed ledger or blockchain using tools such as Hyperledger Composer. The blockchain is shared with the patient, healthcare provider, insurer, and the government. In this case, the government acts as the regulator.
+
+All the medical information related to the patient such as past and present ailments, treatments, family history of medical problems will be stored in the blockchain. This will make every record permanent, transferable and accessible which will prevent the medical records from being lost or modified.
 
 ### How to Run
 1. Clone or download the project to you local machine.
